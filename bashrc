@@ -4,8 +4,8 @@
 #
 # Welcome to the most awesome bash startup script you'll ever see.
 #   It tries to be BSD and GNU compatable, which means it works on
-#   your MAC, cygwin, and sandbox server.  It also tries to be safe 
-#   to add as a source to your .bashrc and .bash_profile.  I usually 
+#   your MAC, cygwin, and sandbox server.  It also tries to be safe
+#   to add as a source to your .bashrc and .bash_profile.  I usually
 #   source this file from both.
 #   It is split into three files
 #   (1) Generic bash stuff
@@ -101,8 +101,8 @@ export HISTFILESIZE=1000000000
 export HISTSIZE=1000000
 export PROMPT_COMMAND='history -a'
 export BROWSER='firefox'
-#export LANG='en_US.utf8'
-export LANG='C' # Testing: Try out the C locale
+export LANG='en_US.utf8'
+#export LANG='C' # Testing: Try out the C locale
 if [ -f "$HOME/.inputrc" ]; then
   export INPUTRC="$HOME/.inputrc"
 fi;
@@ -145,51 +145,15 @@ shopt -s histappend   # Append to history rather than overwrite
 alias ls='ls -h $LS_COLOR'
 alias la='ls -lah $LS_COLOR'
 alias ll='ls -lh $LS_COLOR'
-alias ssh='ssh -A'
-alias g='git'
 alias top='top $TOP_OPTIONS'
 alias rcopy='rsync -az --stats --progress --delete'
-alias ..='cl ..'
 alias trim_whitespace="sed -i 's/[ \t]*$//' "
-alias sush='ssh -l root'
-alias http_headers='curl -svo /dev/null'
 
 # Auto completion
 complete -cf sudo
 complete -cf which
 #autocomplete ssh commands with the hostname
 complete -W "$(echo `cat ~/.ssh/known_hosts 2> /dev/null | cut -f 1 -d ' ' | sed -e s/,.*//g | uniq | grep -v "\["`;)" ssh
-
-# Maven auto completion
-. ~/.bash/config/mvn_bash_completion.bash
-
-# For _get_cword from https://code.google.com/p/bash-completion-lib/source/browse/trunk/include/_get_cword?spec=svn85&r=85
-. ~/.bash/config/get_cword.bash
-
-# autocomplete man commands
-function listmans_raw() {
-  local manpath_func
-  which manpath &> /dev/null
-  if [ $? -eq 0 ]; then
-    manpath_func='manpath'
-  else
-    manpath_func='man -W 2> /dev/null'
-  fi;
-  for dir in $($manpath_func | /usr/bin/tr ':' '\n'); do
-    find "${dir}" ! -type d -name "*.*" 2>/dev/null | sed -e 's#/.*/##g' | sed -e 's#.[^.]*$##g' | sed -e 's#\.[0123456789].*##g'
-  done
-}
-function regen_man_args() {
-  listmans_raw | sort -u > "$MAN_AUTOCOMP_FILE"
-}
-function listmans() {
-  if [ ! -f "$MAN_AUTOCOMP_FILE" ]; then
-    regen_man_args
-  fi;
-  cat "$MAN_AUTOCOMP_FILE"
-}
-complete -W "$(listmans)" man
-
 
 #### RANDOM FUNCTIONS #####
 # awesome!  CD AND LA. I never use 'cd' anymore...
@@ -221,47 +185,8 @@ function ask()
     esac
 }
 
-#Simple blowfish encryption
-function blow()
-{
-    [ -z "$1" ] && echo 'Encrypt: blow FILE' && return 1
-    openssl bf-cbc -salt -in "$1" -out "$1.bf"
-}
-function fish()
-{
-    test -z "$1" -o -z "$2" && echo \
-        'Decrypt: fish INFILE OUTFILE' && return 1
-    openssl bf-cbc -d -salt -in "$1" -out "$2"
-}
-
-# Extract based upon file ext
-function ex() {
-     if [ -f "$1" ] ; then
-         case "$1" in
-             *.tar.bz2)   tar xvjf "$1"        ;;
-             *.tar.gz)    tar xvzf "$1"     ;;
-             *.bz2)       bunzip2 "$1"       ;;
-             *.rar)       unrar x "$1"     ;;
-             *.gz)        gunzip "$1"     ;;
-             *.tar)       tar xvf "$1"        ;;
-             *.tbz2)      tar xvjf "$1"      ;;
-             *.tgz)       tar xvzf "$1"       ;;
-             *.jar)       jar xf "$1"       ;;
-             *.zip)       unzip "$1"     ;;
-             *.Z)         uncompress "$1"  ;;
-             *.7z)        7z x "$1"    ;;
-             *)           echo "'$1' cannot be extracted via >extract<" ;;
-         esac
-     else
-         echo "'$1' is not a valid file"
-     fi
-}
-# Compress with tar + bzip2
-function bz2 () {
-  tar cvpjf "$1.tar.bz2" "$1"
-}
-
-function myip () { 
+# Print IP address
+function myip () {
  # GNU vs BSD hostname
  (hostname -i &> /dev/null)
   if [ $? -eq 0 ]; then
@@ -272,24 +197,6 @@ function myip () {
   fi;
 }
 
-function dumptcp() {
- # TCPDUMP all the data on port $1 into rotated files /tmp/results.  Note,
- # this can get VERY large
-  sudo /usr/sbin/tcpdump -i any -s0 tcp port "$1" -A -w /tmp/results -C 100
-}
-
-# anyvi <file>
-# run EDITOR on a script no matter where it is
-function anyvi()
-{
-    if [ -e "$1" ] || [ -f "$1" ]; then
-        $EDITOR "$1"
-    else
-        $EDITOR "$(which "$1")"
-    fi
-}
-complete -cf anyvi        #autocomplete the anyvi command
-
 # Grep for a process while at the same time ignoring the grep that
 # you're running.  For example
 #   ps awxxx | grep java
@@ -297,7 +204,7 @@ complete -cf anyvi        #autocomplete the anyvi command
 function psgrep(){
   OUTFILE=$(mktemp /tmp/psgrep.XXXXX)
   ps awxxx > "$OUTFILE"
-  grep "$@" "$OUTFILE"
+  grep -i "$@" "$OUTFILE"
   rm "$OUTFILE"
 }
 
@@ -330,14 +237,17 @@ fi
 # (6) The export PS1 is simple to understand!
 # (7) If the prev command error codes, the prompt '>' turns red
 export PS1="$Y\t$N $W"'$(__git_ps1 "(%s) ")'"$N$PROMPT_COLOR\u@\H$N:$C\w$N\n"'$CURSOR_PROMPT '
+
 # TODO: Find out why my $R and $N shortcuts don't work here!!!
-export PROMPT_COMMAND='if [ $? -ne 0 ]; then CURSOR_PROMPT=`bad_prompt`; else CURSOR_PROMPT="<"; fi;'
+export PROMPT_COMMAND='bad_prompt'
 
 function bad_prompt(){
-#  red='\033[0;31m'
-#  NC='\033[0m' # No Color
-#  echo -e "${red}>${NC}"
-  echo -e ">"
+  if [ $? -ne 0 ]; then
+    red='\033[0;31m'
+    NC='\033[0m' # No Color
+    echo -e "${red}!!!${NC}"
+  fi;
+  printf "%*s" $COLUMNS | tr " " "="
 }
 
 #### Source group
@@ -356,9 +266,3 @@ export PATH
 PATH=$(echo "$PATH" | awk -F: '
 { start=0; for (i = 1; i <= NF; i++) if (!($i in arr) && $i) {if (start!=0) printf ":";start=1; printf "%s", $i;arr[$i]}; }
 END { printf "\n"; } ')
-
-
-# Setting PATH for Python 3.4
-# The orginal version is saved in .bash_profile.pysave
-PATH="/Library/Frameworks/Python.framework/Versions/3.4/bin:${PATH}"
-export PATH
